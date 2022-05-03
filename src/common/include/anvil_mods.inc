@@ -1,5 +1,5 @@
 # Set Logging
-%post --log=/root/anvil_mods.log
+%post --log=/root/anvil-mods.log
 
 # Set YUM Variables
 yum_install=(eval "yum install -y")
