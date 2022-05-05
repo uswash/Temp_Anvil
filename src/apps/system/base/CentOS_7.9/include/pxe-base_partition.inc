@@ -15,5 +15,16 @@ if [[ ${platform2} = "VMware" ]]; then
     let "n += 1"
     done
   # Single Virtual disks
-  echo "zerombr"   > /tmp/part-include
-  echo "clearpart       --all      --initlabel" >> /tmp/part-include
+  echo "zerombr"                                                                   > /tmp/part-include
+  echo "clearpart       --all      --initlabel"                                      >> /tmp/part-include
+  echo "part /boot      --fstype ext4     --size=512       --ondisk=$DRIVE1"            >> /tmp/part-include
+  echo "part pv.0                         --size=1 --grow  --ondisk=$DRIVE1"            >> /tmp/part-include
+  echo "volgroup vg.0 pv.0"                                                             >> /tmp/part-include
+  echo "logvol /        --fstype ext4  --name=lv_root   --vgname=vg.0   --size=51200"  >> /tmp/part-include
+  echo "logvol swap     --fstype swap  --name=lv_swap   --vgname=vg.0   --size=2048" >> /tmp/part-include
+  echo "logvol /var     --fstype ext4  --name=lv_var    --vgname=vg.0   --size=8192"
+  echo "logvol /home    --fstype ext4  --name=lv_home   --vgname=vg.0   --size=10240" 
+  echo "logvol /var/log  --fstype ext4  --name=lv_var_log  --vgname=vg.0 --size=8192"
+  echo "logvol /var/log/audit  --fstype ext4  --name=lv_var_log_audit  --vgname=vg.0  --size=8192"
+  echo "logvol /tmp      --fstype ext4   -name=lv_tmp  -vgname=vg.0  --size=4096"
+  echo "logvol /opt     --fstype ext4   -name=lv_opt   --vgname=vg.0  --size=10240 --grow" 
