@@ -288,17 +288,41 @@ read usermenuchoice
 case $usermenuchoice in
 
 1 )
-	clear && echo "" && echo "Please enter the new username below:  ${txtcyn}(NO SPACES OR SPECIAL CHARACTERS!)${txtrst}" | centerwide && echo ""
+	clear && echo "" && echo "Please enter the new users ${txtcyn}SID${txtrst} below:  " | echo ""
 	read newusername
-	echo "" && echo "Please enter a group for the new user:  ${txtcyn}(STILL NO SPACES OR SPECIAL CHARACTERS!)${txtrst}" | centerwide && echo ""
-	read newusergroup
-	echo "" && echo "What is the new user's full name?  ${txtcyn}(YOU CAN USE SPACES HERE IF YOU WANT!)${txtrst}" | centerwide && echo ""
-	read newuserfullname
-	echo "" && echo ""
-	groupadd $newusergroup
-	useradd -g $newusergroup -c "$newuserfullname" $newusername && echo "${txtgrn}New user $newusername created successfully.${txtrst}" | center || echo "${txtred}Could not create new user.${txtrst}" | center
-	echo "" && echo "${txtcyn}(press ENTER to continue)${txtrst}" | center
-	read
+	echo "" && echo "Please enter a ${txtcyn}Group${txtrst} for ${newusername}: " |echo ""
+	echo "1.	PlatformAdmin" 
+	echo "2.	PlatformUser"
+	read groupchoice
+	case $groupchoice in
+		1 )
+			groupname="PlatformAdmin"
+		;;
+		2 )
+			groupname="PlatformUser"
+		;;
+		* )
+			clear && echo "" && echo "${txtred}Please make a valid selection.${txtrst}" | echo "" && echo "${txtcyn}(Press ENTER to continue.)${txtrst}" | read
+			
+		;;
+	esac
+	echo "" && echo "Please enter a Temporary ${txtcyn}Password${txtrst} for ${newusername}:  " | echo ""
+	read newpassword
+	echo "" && echo "Creating account for ${newusername}..." | echo ""
+	if [[ $groupname == "PlatformAdmin" ]]
+	then
+		useradd -g $groupname -G wheel -d /home/$newusername $newusername -c "${newusername} | PlatformUser"
+		echo "${newpassword}" | passwd --stdin $newusername
+	else
+		useradd -g $groupname -d /home/$newusername $newusername -c "${newusername} | PlatformUser"
+		echo "${newpassword}" | passwd --stdin $newusername
+	fi
+	echo "" && echo "Enforcing ${newusername}'s password change upon first login" | echo ""
+	chage -d 0 $newusername
+	echo "" && echo "Enforcing ${newusername}'s account to lock after 30 days of inactivity" | echo ""
+	chage --inactive 30 $newusername
+	echo "" && echo "Account created successfully." | echo ""
+	echo "" && echo "${txtcyn}(press ENTER to continue)${txtrst}" | read
 ;;
 
 2 )
