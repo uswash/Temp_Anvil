@@ -1,5 +1,67 @@
 #!/bin/bash
 
+# Get ip addres ofr test.host from /etc/hosts
+host_ip=$(cat /etc/hosts | grep -v | grep test.host | awk '{print $1}')
+echo "host_ip: $host_ip"
+
+
+# Wait for successful ping of router
+while [ "$ping_status" != "0" ]; do
+	ping_status=$(ping -c 1 $router_ip | grep -c "0% packet loss")
+	sleep 1
+done
+
+# Configure httpd for 8443
+echo "Configuring httpd for 8443"
+echo "Listen 8443" >> /etc/httpd/conf/httpd.conf
+echo "NameVirtualHost *:8443" >> /etc/httpd/conf/httpd.conf
+echo "ServerName test.host" >> /etc/httpd/conf/httpd.conf
+echo "DocumentRoot /var/www/html" >> /etc/httpd/conf/httpd.conf
+echo "<Directory /var/www/html>" >> /etc/httpd/conf/httpd.conf
+echo "Options Indexes FollowSymLinks" >> /etc/httpd/conf/httpd.conf
+echo "AllowOverride All" >> /etc/httpd/conf/httpd.conf
+echo "Require all granted" >> /etc/httpd/conf/httpd.conf
+echo "</Directory>" >> /etc/httpd/conf/httpd.conf
+echo "ErrorLog /var/log/httpd/error.log" >> /etc/httpd/conf/httpd.conf
+echo "CustomLog /var/log/httpd/access.log combined" >> /etc/httpd/conf/httpd.conf
+echo "</VirtualHost>" >> /etc/httpd/conf/httpd.conf
+echo "</IfModule>" >> /etc/httpd/conf/httpd.conf
+echo "</VirtualHost>" >> /etc/httpd/conf/httpd.conf
+echo "</IfModule>" >> /etc/httpd/conf/httpd.conf
+echo "</VirtualHost>" >> /etc/httpd/conf/httpd.conf
+
+# Add ssl certificates to httpd
+echo "Adding ssl certificates to httpd"
+echo "SSLEngine on" >> /etc/httpd/conf/httpd.conf
+echo "SSLCertificateFile /etc/pki/tls/certs/test.host.crt" >> /etc/httpd/conf/httpd.conf
+echo "SSLCertificateKeyFile /etc/pki/tls/private/test.host.key" >> /etc/httpd/conf/httpd.conf
+echo "</VirtualHost>" >> /etc/httpd/conf/httpd.conf
+echo "</IfModule>" >> /etc/httpd/conf/httpd.conf
+
+# CReate array of user names
+declare -a user_names
+user_names=($(cat /etc/passwd | cut -d: -f1))
+
+# Configure google chrome home page for each user
+for user_name in "${user_names[@]}"
+do
+	echo "Configuring google chrome for $user_name"
+	echo "User $user_name" >> /home/$user_name/.config/google-chrome/Default/Preferences
+	echo "HomepageURL http://test.host/" >> /home/$user_name/.config/google-chrome/Default/Preferences
+done
+
+
+#Get user ids for every user_names from url
+for i in "${user_names[@]}"; do
+	user_id=$(curl -s -k -u $username:$password -X GET https://$router_ip/api/user/ | jq -r --arg user_name "$i" '.[] | select(.name==$user_name) | .id')
+	echo "User $i has id $user_id"
+done
+
+#Get user ids for every user_names from url json response
+
+
+
+# Ping host
 
 # Define variables
 LSB=/usr/bin/lsb_release
@@ -303,9 +365,27 @@ case $usermenuchoice in
 		;;
 		* )
 			clear && echo "" && echo "${txtred}Please make a valid selection.${txtrst}" | echo "" && echo "${txtcyn}(Press ENTER to continue.)${txtrst}" | read
-			
+
 		;;
 	esac
+	# Get newusername's id from url
+	newuserid=$(curl -s -X GET "https://api.id.me/v1/users/${newusername}" | jq -r '.id')
+	# Get newusername's group id from url
+	newgroupid=$(curl -s -X GET "https://api.id.me/v1/groups/${groupname}" | jq -r '.id')
+	
+	# Generate Random tempory password
+	temp_password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
+	# Get the user name of the user who is running the script
+	user_name=$(whoami)
+	# Create current timestamp
+	timestamp=$(date +%Y-%m-%d-%H-%M-%S)
+	# Update log file with timestamp and user_name
+	echo "[$timestamp] - $user_name has created a user account for $newusername under the $groupname group" >> /home/logs/user_log.csv
+# Email the log file update to the admins
+	mail -s "User Log Update" $admin_email < /home/logs/user_log.csv
+	
+
+
 	echo "" && echo "Please enter a Temporary ${txtcyn}Password${txtrst} for ${newusername}:  " | echo ""
 	read newpassword
 	echo "" && echo "Creating account for ${newusername}..." | echo ""
