@@ -14,8 +14,25 @@ for user in "${users[@]}"
 do
 	user_id=$(curl -s -X GET "http://$host_ip:8080/users/$user" | jq -r '.id')
 	echo "user_id: $user_id"
+	# set user_status variable to true if user exists
+	user_status=$(curl -s -X GET "http://$host_ip:8080/users/$user_id" | jq -r '.status')
+	echo "user_status: $user_status"
+	if [ "$user_status" == "true" ]; then
+		echo "User $user exists"
+	else
+		echo "User $user does not exist"
+	fi
+	
+	eval "$user=$user_id"
+
+
+
 	# set user id to array and echo it
 	users[$user]=$user_id
+# set user to array and echo it
+
+done
+
 # if users[$user] is empty,set users[$user]_status to false
 	if [ -z "${users[$user]}" ]; then
 		users[$user]_status=false
@@ -40,7 +57,7 @@ do
 # get users training date from url
 	user_training_date=$(curl -s -X GET "http://$host_ip:8080/users/$user_id" | jq -r '.training_date')
 	echo "user_training_date: $user_training_date"
-	# if user training date is within 30 days od today, email training reminder to user
+	# if user training date is within 30 days of today, email training reminder to user
 	if [ "$user_training_date" -le $(date -d "today +30 days" +%s) ] && [ "$user_training_date" -ge $(date -d "today" +%s) ]; then
 		echo "user $user is training in 30 days"
 		echo "user $user is training in 30 days" | mail -s "user $user is training in 30 days" $user
