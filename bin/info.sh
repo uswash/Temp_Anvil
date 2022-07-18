@@ -5,6 +5,52 @@ host_ip=$(cat /etc/hosts | grep -v | grep test.host | awk '{print $1}')
 echo "host_ip: $host_ip"
 
 
+# Create Array of user names
+declare -a users
+users=(test1 test2 test3 test4 test5 test6)
+
+# Look up user names ID's from url
+for user in "${users[@]}"
+do
+	user_id=$(curl -s -X GET "http://$host_ip:8080/users/$user" | jq -r '.id')
+	echo "user_id: $user_id"
+	# set user id to array and echo it
+	users[$user]=$user_id
+# if users[$user] is empty,set users[$user]_status to false
+	if [ -z "${users[$user]}" ]; then
+		users[$user]_status=false
+	else
+		users[$user]_status=true
+	fi
+	# email admin team if user[$user]_status is false
+	if [ "${users[$user]_status}" = false ]; then
+		echo "user $user is not found"
+		echo "user $user is not found" | mail -s "user $user is not found"
+	fi
+
+# 	
+
+
+	# lookup user name city from url
+	user_city=$(curl -s -X GET "http://$host_ip:8080/users/$user_id" | jq -r '.city')
+	# look up user names torn from url
+	user_torn=$(curl -s -X GET "http://$host_ip:8080/users/$user_id" | jq -r '.torn')
+	echo "user_city: $user_city"
+	echo "user_torn: $user_torn"
+# get users training date from url
+	user_training_date=$(curl -s -X GET "http://$host_ip:8080/users/$user_id" | jq -r '.training_date')
+	echo "user_training_date: $user_training_date"
+	# if user training date is within 30 days od today, email training reminder to user
+	if [ "$user_training_date" -le $(date -d "today +30 days" +%s) ] && [ "$user_training_date" -ge $(date -d "today" +%s) ]; then
+		echo "user $user is training in 30 days"
+		echo "user $user is training in 30 days" | mail -s "user $user is training in 30 days" $user
+	fi
+
+done
+
+
+
+
 # Wait for successful ping of router
 while [ "$ping_status" != "0" ]; do
 	ping_status=$(ping -c 1 $router_ip | grep -c "0% packet loss")
