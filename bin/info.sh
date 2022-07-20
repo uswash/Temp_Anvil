@@ -5,6 +5,18 @@ host_ip=$(cat /etc/hosts | grep -v | grep test.host | awk '{print $1}')
 echo "host_ip: $host_ip"
 
 
+# Ask user for user name or comma separated list of user names
+read -p "Enter user name or comma separated list of user names: " user_name
+echo "user_name: $user_name"
+
+# IF USER NAME IS A COMMA SEPARATED LIST, THEN SPLIT IT AND ASSIGN TO ARRAY
+if [[ $user_name == *","* ]]; then
+		user_name_array=($user_name)
+else
+		user_name_array=($user_name)
+fi
+
+
 # Create Array of user names
 declare -a users
 users=(test1 test2 test3 test4 test5 test6)
