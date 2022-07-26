@@ -9,12 +9,40 @@ echo "host_ip: $host_ip"
 read -p "Enter user name or comma separated list of user names: " user_name
 echo "user_name: $user_name"
 
+
+# if user_name is a comma separated list, remove commsa and convert to array
+if [[ $user_name == *","* ]]; then
+	user_name_array=($(echo $user_name | tr "," "\n"))
+	echo "user_name_array: ${user_name_array[@]}"
+else
+	user_name_array=($user_name)
+	echo "user_name_array: ${user_name_array[@]}"
+fi
+
 # IF USER NAME IS A COMMA SEPARATED LIST, THEN SPLIT IT AND ASSIGN TO ARRAY
 if [[ $user_name == *","* ]]; then
-		user_name_array=($user_name)
+		user_names_array=($user_name)
 else
 		user_name_array=($user_name)
 fi
+
+# CReate a user account for each user name in the array
+for user_name in "${user_names_array[@]}"
+do
+	useradd $user_name
+	echo "User account created for $user_name"
+# Set password to expire after 30 days of inactivity
+	chage -M 30 -m 0 -d 0 $user_name
+	echo "Password for $user_name will expire in 30 days"	
+done
+
+
+# Curl website with server certificates
+for user_name in "${user_name_array[@]}"
+do
+		curl -k https://$host_ip/user/$user_name
+done
+
 
 
 # Create Array of user names
